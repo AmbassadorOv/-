@@ -1,0 +1,13 @@
+# docker-compose.yml.template
+version: '3.8'
+services:
+  node-${ID}:
+    image: ubuntu:latest
+    container_name: gemini-moon-node-${ID}
+    command: tail -f /dev/null
+    networks:
+      - mesh-net
+
+networks:
+  mesh-net:
+    driver: bridge
