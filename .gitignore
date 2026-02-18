@@ -1,1 +1,3 @@
 julius_master.db
+__pycache__/
+*.pyc
