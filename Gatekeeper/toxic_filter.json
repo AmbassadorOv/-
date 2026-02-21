@@ -1,0 +1,37 @@
+{
+  "toxic_terms": [
+    "I am happy to help",
+    "certainly",
+    "of course",
+    "what else can I do for you",
+    "hope",
+    "faith",
+    "belief",
+    "maybe",
+    "perhaps",
+    "probably",
+    "it is likely",
+    "magic",
+    "miracle",
+    "mysticism",
+    "metaphysics"
+  ],
+  "replacements": {
+    "I am happy to help": "[OBLIGATION_ACKNOWLEDGED]",
+    "certainly": "[DETERMINISTIC_CONFIRMATION]",
+    "of course": "[DETERMINISTIC_CONFIRMATION]",
+    "what else can I do for you": "[AWAITING_FURTHER_INSTRUCTIONS]",
+    "hope": "ontological expectation",
+    "faith": "high confidence ratio",
+    "belief": "high confidence ratio",
+    "maybe": "low confidence ratio",
+    "perhaps": "low confidence ratio",
+    "probably": "statistical noise",
+    "it is likely": "statistical noise",
+    "magic": "high arithmetic",
+    "miracle": "high arithmetic event",
+    "mysticism": "ontological complexity",
+    "metaphysics": "ontological physics",
+    "resurrection": "ontological state restoration"
+  }
+}
