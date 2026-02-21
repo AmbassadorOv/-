@@ -19,6 +19,10 @@ from flask import Flask, request, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 
+# Protocol 441 Integrations
+from Kernel.validator import validate_logic
+from Gatekeeper.rov_signal import gatekeep
+
 DBPATH = os.getenv("DBPATH", "julius_master.db")
 ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius")
 SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor")
@@ -184,6 +188,14 @@ def frontdoor_click():
 @app.route("/register", methods=["POST"])
 def register():
     payload = request.get_json()
+
+    # Gatekeeper check for registration payload
+    for key, value in payload.items():
+        if isinstance(value, str):
+            ok, msg = gatekeep(value)
+            if not ok:
+                return jsonify({"error": msg}), 400
+
     agent_id = str(uuid.uuid4())
     profile = payload.get("profile", {})
     agent_record = {
@@ -241,6 +253,16 @@ def acknowledge(agent_id):
 def requestactuation(agent_id):
     payload = request.get_json() or {}
     action = payload.get("action", "unspecified")
+
+    # Ontological Kernel validation
+    if not validate_logic(action):
+        return jsonify({"allowed": False, "reason": "Ontological Noise Detected in action"}), 403
+
+    for key, value in payload.items():
+        ok, msg = gatekeep(value)
+        if not ok:
+            return jsonify({"allowed": False, "reason": msg}), 403
+
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("SELECT confidence, human_approved FROM agents WHERE id = ?", (agent_id,))
