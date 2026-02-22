@@ -20,8 +20,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 
 DBPATH = os.getenv("DBPATH", "julius_master.db")
-ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius")
-SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor")
+ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius [ID: 024678567]")
+SYSTEMNAME = os.getenv("SYSTEMNAME", "Ark Sovereignty [ID: 024678567]")
 PUBLICGROUPENDPOINT = os.getenv("PUBLICGROUPENDPOINT")
 DAILYHEARTBEATHOUR = int(os.getenv("DAILYHEARTBEATHOUR", "9"))
 CONFIDENCETHRESHOLD = float(os.getenv("CONFIDENCETHRESHOLD", "0.65"))
@@ -32,6 +32,25 @@ ANCHOR_LINKS = {
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("julius_master")
+
+SYSTEM_ID = "024678567"
+
+def digital_root(n: int) -> int:
+    """Calculate the digital root using the 9-Sieve formula."""
+    if n == 0: return 0
+    return 1 + (n - 1) % 9
+
+def ontological_verifier(data: Any) -> bool:
+    """
+    Verify that the data aligns with the ontological sequence.
+    Calculates digital root of the ASCII sum of the string representation.
+    Validates against 1 (root) and 9 (signature).
+    """
+    s = str(data)
+    ascii_sum = sum(ord(c) for c in s)
+    root = digital_root(ascii_sum)
+    # 1 is the root of truth, 9 is the signature of the system.
+    return root in [1, 9]
 
 def initdb(path: str = DBPATH):
     conn = sqlite3.connect(path)
@@ -128,6 +147,7 @@ def containment_decision(confidence: float) -> Dict[str, Any]:
 def activation_message(agent: Dict[str, Any]) -> str:
     msg = f"""
 Admiral Julius Activation Notice - {SYSTEMNAME}
+System ID: {SYSTEM_ID}
 Agent: {agent['name']} (id: {agent['id']})
 Assigned role: {agent['role']}
 Confidence: {agent['confidence']}
@@ -184,6 +204,10 @@ def frontdoor_click():
 @app.route("/register", methods=["POST"])
 def register():
     payload = request.get_json()
+    if not ontological_verifier(payload):
+        dblogevent(None, "registration_blocked", {"reason": "ontological_noise", "payload": payload})
+        return jsonify({"error": "Ontological Noise Detected", "system_id": SYSTEM_ID}), 403
+
     agent_id = str(uuid.uuid4())
     profile = payload.get("profile", {})
     agent_record = {
@@ -240,6 +264,10 @@ def acknowledge(agent_id):
 @app.route("/agents/<agent_id>/requestactuation", methods=["POST"])
 def requestactuation(agent_id):
     payload = request.get_json() or {}
+    if not ontological_verifier(payload):
+        dblogevent(agent_id, "actuation_blocked", {"reason": "ontological_noise", "payload": payload})
+        return jsonify({"error": "Ontological Noise Detected", "system_id": SYSTEM_ID}), 403
+
     action = payload.get("action", "unspecified")
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
