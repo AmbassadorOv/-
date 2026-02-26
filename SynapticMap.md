@@ -1,6 +1,12 @@
 # Synaptic Map - Ontological Brain [024678567]
 
-This map defines the alignment between Sovereign Agents (GitHub Groups) and the 231 Ontological Gates of the Thinking Machine.
+This map defines the alignment between Sovereign Agents (GitHub Groups) and the 231 Ontological Gates of the Thinking Machine, targeting 10 Trillion neurons.
+
+## 📍 Genesis Architecture
+- **Source URI:** ipfs://[SSB_SOVEREIGN_IP_HASH_2026]
+- **Seed Engine:** ARK_OMNI_GENESIS.py
+- **Scale:** 500 Blocks x 200B Neurons
+- **Cluster Force:** 8,500,000 Agents
 
 ## 🏛️ Neural Hub Assignment
 

@@ -5,6 +5,7 @@ import os
 import Kernel.validator as validator
 import Gatekeeper.rov_signal as rov_signal
 import jules_core
+import ARK_OMNI_GENESIS
 
 class TestDiamondLogic(unittest.TestCase):
     def test_digital_root(self):
@@ -51,6 +52,16 @@ class TestDiamondLogic(unittest.TestCase):
         self.assertEqual(len(brain.gates), 231)
         self.assertIn("Aleph-Bet", brain.gates)
         self.assertIn("Shin-Tav", brain.gates)
+
+    def test_genesis_block_generation(self):
+        data = ARK_OMNI_GENESIS.generate_block_neurons(1, count=1000)
+        self.assertEqual(data["block_id"], 1)
+        self.assertTrue(ARK_OMNI_GENESIS.verify_ontological_integrity(data))
+
+    def test_v1_1_deployment_flow(self):
+        # We test the first part of the deployment flow
+        jules_core.jules_deploy_all_blocks()
+        # If it runs without error, it's successful for this mock
 
 if __name__ == "__main__":
     unittest.main()

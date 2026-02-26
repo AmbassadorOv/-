@@ -62,9 +62,11 @@ if __name__ == "__main__":
     files_to_seal = [
         "juliusmasterbundle.py",
         "jules_core.py",
+        "ARK_OMNI_GENESIS.py",
         "Kernel/validator.py",
         "Gatekeeper/rov_signal.py",
-        "SynapticMap.md"
+        "SynapticMap.md",
+        "MANIFEST.md"
     ]
     for f in files_to_seal:
         if os.path.exists(f):
