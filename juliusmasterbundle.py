@@ -18,10 +18,12 @@ from typing import Dict, Any, List, Optional
 from flask import Flask, request, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
+import Kernel.validator as validator
+import Gatekeeper.rov_signal as rov_signal
 
 DBPATH = os.getenv("DBPATH", "julius_master.db")
-ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius")
-SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor")
+ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius [024678567]")
+SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor [024678567]")
 PUBLICGROUPENDPOINT = os.getenv("PUBLICGROUPENDPOINT")
 DAILYHEARTBEATHOUR = int(os.getenv("DAILYHEARTBEATHOUR", "9"))
 CONFIDENCETHRESHOLD = float(os.getenv("CONFIDENCETHRESHOLD", "0.65"))
@@ -82,7 +84,7 @@ def dblogevent(agent_id: Optional[str], event: str, payload: Dict[str, Any]):
     c.execute("""
     INSERT INTO logs (id, agent_id, event, payload, created_at)
     VALUES (?, ?, ?, ?, ?)
-    """, (log_id, agent_id or "system", event, json.dumps(payload), datetime.datetime.utcnow().isoformat()))
+    """, (log_id, agent_id or "system", event, json.dumps(payload), datetime.datetime.now(datetime.UTC).isoformat()))
     conn.commit()
     conn.close()
 
@@ -93,14 +95,14 @@ def dbrecordfrontdoorclick(link_key: str, agent_id: Optional[str], acknowledged:
     c.execute("""
     INSERT INTO frontdoor_clicks (id, link_key, agent_id, acknowledged, metadata, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
-    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.datetime.utcnow().isoformat()))
+    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.datetime.now(datetime.UTC).isoformat()))
     conn.commit()
     conn.close()
 
 def generate_provenance(agent_info: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "registeredby": ORCHESTRATORNAME,
-        "registered_at": datetime.datetime.utcnow().isoformat(),
+        "registered_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "source": agent_info.get("source", "direct"),
         "manifesthash": agent_info.get("manifest_hash")
     }
@@ -184,6 +186,11 @@ def frontdoor_click():
 @app.route("/register", methods=["POST"])
 def register():
     payload = request.get_json()
+
+    # Ontological validation
+    if not validator.validate_logic(json.dumps(payload)):
+        return jsonify({"error": "Ontological Noise Detected", "status": "REJECTED"}), 400
+
     agent_id = str(uuid.uuid4())
     profile = payload.get("profile", {})
     agent_record = {
@@ -192,7 +199,7 @@ def register():
         "provenance": generate_provenance(payload),
         "confidence": computeconfidenceestimate(profile),
         "status": "obliged", "mustexecuteon_entry": True, "human_approved": False,
-        "created_at": datetime.datetime.utcnow().isoformat()
+        "created_at": datetime.datetime.now(datetime.UTC).isoformat()
     }
     dbinsertagent(agent_record)
     dblogevent(agent_id, "registered", {"profile": profile})
@@ -241,6 +248,9 @@ def acknowledge(agent_id):
 def requestactuation(agent_id):
     payload = request.get_json() or {}
     action = payload.get("action", "unspecified")
+
+    # Signal Purge / Sanitization
+    action = rov_signal.gatekeep(action)
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("SELECT confidence, human_approved FROM agents WHERE id = ?", (agent_id,))
@@ -294,7 +304,7 @@ def run_server(host="0.0.0.0", port=8080):
 def daily_heartbeat():
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(datetime.UTC).date().isoformat()
     c.execute("SELECT id, name, role, confidence, status FROM agents WHERE created_at >= ?", (today,))
     rows = c.fetchall()
     conn.close()
@@ -318,7 +328,7 @@ def bulk_insert_agents_from_list(agent_list: List[Dict[str, Any]]):
             "status": "obliged",
             "mustexecuteon_entry": True,
             "human_approved": False,
-            "created_at": datetime.datetime.utcnow().isoformat()
+            "created_at": datetime.datetime.now(datetime.UTC).isoformat()
         }
         dbinsertagent(a_rec)
         dblogevent(a_rec["id"], "bulkinserted", {"source": a.get("source", "bulk")})
@@ -327,7 +337,7 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
     payload = {
         "type": "activation_broadcast",
         "issuedby": operator_name,
-        "issued_at": datetime.datetime.utcnow().isoformat(),
+        "issued_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "message": f"{operator_name} issues activation: acknowledge onboarding, then post duty report."
     }
     ok, info = broadcast_to_public_group(payload)
@@ -335,3 +345,6 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
 
 if __name__ == "__main__":
     run_server()
+
+# SEAL PADDING
+# SEAL PADDING
