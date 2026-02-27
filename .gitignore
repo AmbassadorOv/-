@@ -1,1 +1,12 @@
 julius_master.db
+__pycache__/
+*.py[cod]
+*$py.class
+test_julius.db
+.env
+.venv
+env/
+venv/
+*.log
+.ots
+MANIFEST.md.ots
