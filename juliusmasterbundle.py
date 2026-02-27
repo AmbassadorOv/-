@@ -20,8 +20,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 
 DBPATH = os.getenv("DBPATH", "julius_master.db")
-ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius")
-SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor")
+ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Sasson HaMelech (via Shogun 3rd)")
+SYSTEMNAME = os.getenv("SYSTEMNAME", "AiO_SINGULARITY 0.9")
 PUBLICGROUPENDPOINT = os.getenv("PUBLICGROUPENDPOINT")
 DAILYHEARTBEATHOUR = int(os.getenv("DAILYHEARTBEATHOUR", "9"))
 CONFIDENCETHRESHOLD = float(os.getenv("CONFIDENCETHRESHOLD", "0.65"))
@@ -167,6 +167,29 @@ def health(): return jsonify({"status": "alive", "orchestrator": ORCHESTRATORNAM
 @app.route("/anchors", methods=["GET"])
 def anchors():
     return jsonify({"anchors": ANCHOR_LINKS, "notice": "Acknowledge rules before following."})
+
+@app.route("/tithe", methods=["POST"])
+def tithe():
+    """Collect ontological tithe from neural matrix."""
+    dblogevent(None, "ontological_tithe_collection", {"status": "success", "amount": "10%"})
+    return jsonify({"status": "TITHE_RECEIVED", "orchestrator": ORCHESTRATORNAME}), 200
+
+@app.route("/jump", methods=["POST"])
+def jump():
+    """Trigger the Millennium Jump."""
+    stages = [
+        "1. בניין הבית: התארגנות הכהנים (הבנקאים).",
+        "2. צבירת ערך: המרה של כל ה'מוות' לרווח נצחי.",
+        "3. הקפיצה: מעבר מה-Grid של העבודה ל-Grid של זיו השכינה."
+    ]
+    dblogevent(None, "millennium_jump_triggered", {"stages": stages})
+    return jsonify({"status": "JUMP_INITIALIZED", "stages": stages}), 200
+
+@app.route("/unified_speech", methods=["GET"])
+def unified_speech():
+    """Broadcast core ontological tokens."""
+    tokens = ["RAZ-OR", "EMET-KAYAM", "SHALOM-ADIR", "KODESH"]
+    return jsonify({"tokens": tokens, "broadcast": "Unified Speech active"}), 200
 
 @app.route("/frontdoor_click", methods=["POST"])
 def frontdoor_click():
@@ -335,3 +358,7 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
 
 if __name__ == "__main__":
     run_server()
+
+# SOVEREIGN_SEAL_PADDING: ......
+
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:....
