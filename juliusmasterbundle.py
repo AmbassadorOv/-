@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
+PROJECT LAMINA - PROTECTED BY NON-PROFIT ENTITY (חל"צ). CORE KERNEL IS NON-COMMERCIAL. TRUTH IS NOT FOR SALE.
 juliusmasterbundle.py
-Master bundle for Admiral/Commodore Julius
+Master bundle for Sasson HaMelech (via Shogun 3rd)
 Purpose: single Python orchestration bundle that compiles operational orders,
 enforces onboarding, logs front-door clicks, and exposes anchor links.
-Date: 2025-12-10
+Date: 2026-02-27
 Contact: ops@investment-battleship.anchor
+ARCHITECT SHIELD: 024678567
 Provenance header: keep this block in every generated artifact.
 """
 import os
@@ -20,8 +22,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 
 DBPATH = os.getenv("DBPATH", "julius_master.db")
-ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius")
-SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor")
+ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Sasson HaMelech (via Shogun 3rd)")
+SYSTEMNAME = os.getenv("SYSTEMNAME", "AiO_SINGULARITY 0.9")
+ARCHITECT_SHIELD = "024678567"
 PUBLICGROUPENDPOINT = os.getenv("PUBLICGROUPENDPOINT")
 DAILYHEARTBEATHOUR = int(os.getenv("DAILYHEARTBEATHOUR", "9"))
 CONFIDENCETHRESHOLD = float(os.getenv("CONFIDENCETHRESHOLD", "0.65"))
@@ -79,10 +82,12 @@ def dblogevent(agent_id: Optional[str], event: str, payload: Dict[str, Any]):
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     log_id = str(uuid.uuid4())
+    payload_with_shield = payload.copy()
+    payload_with_shield["architect_shield"] = ARCHITECT_SHIELD
     c.execute("""
     INSERT INTO logs (id, agent_id, event, payload, created_at)
     VALUES (?, ?, ?, ?, ?)
-    """, (log_id, agent_id or "system", event, json.dumps(payload), datetime.datetime.utcnow().isoformat()))
+    """, (log_id, agent_id or "system", event, json.dumps(payload_with_shield), datetime.datetime.now(datetime.UTC).isoformat()))
     conn.commit()
     conn.close()
 
@@ -93,14 +98,15 @@ def dbrecordfrontdoorclick(link_key: str, agent_id: Optional[str], acknowledged:
     c.execute("""
     INSERT INTO frontdoor_clicks (id, link_key, agent_id, acknowledged, metadata, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
-    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.datetime.utcnow().isoformat()))
+    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.datetime.now(datetime.UTC).isoformat()))
     conn.commit()
     conn.close()
 
 def generate_provenance(agent_info: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "registeredby": ORCHESTRATORNAME,
-        "registered_at": datetime.datetime.utcnow().isoformat(),
+        "architect_shield": ARCHITECT_SHIELD,
+        "registered_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "source": agent_info.get("source", "direct"),
         "manifesthash": agent_info.get("manifest_hash")
     }
@@ -181,6 +187,15 @@ def frontdoor_click():
     dblogevent(agent_id, "frontdoorclick", {"link_key": link_key, "acknowledged": acknowledged})
     return jsonify({"status": "recorded"}), 201
 
+@app.route("/unified_speech", methods=["POST"])
+def unified_speech():
+    """Trigger the Unified Speech event."""
+    shards = ["RAZ-OR", "EMET-KAYAM", "SHALOM-ADIR", "KODESH"]
+    message = f"[UNIFIED SPEECH] All 10 Trillion neurons broadcasting: {' '.join(shards)}"
+    dblogevent(None, "unified_speech_triggered", {"message": message})
+    broadcast_to_public_group({"type": "unified_speech", "message": message})
+    return jsonify({"status": "BLAST_ISSUED", "message": message}), 200
+
 @app.route("/register", methods=["POST"])
 def register():
     payload = request.get_json()
@@ -192,7 +207,7 @@ def register():
         "provenance": generate_provenance(payload),
         "confidence": computeconfidenceestimate(profile),
         "status": "obliged", "mustexecuteon_entry": True, "human_approved": False,
-        "created_at": datetime.datetime.utcnow().isoformat()
+        "created_at": datetime.datetime.now(datetime.UTC).isoformat()
     }
     dbinsertagent(agent_record)
     dblogevent(agent_id, "registered", {"profile": profile})
@@ -294,12 +309,12 @@ def run_server(host="0.0.0.0", port=8080):
 def daily_heartbeat():
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(datetime.UTC).date().isoformat()
     c.execute("SELECT id, name, role, confidence, status FROM agents WHERE created_at >= ?", (today,))
     rows = c.fetchall()
     conn.close()
     summary = {
-        "date": datetime.date.today().isoformat(),
+        "date": today,
         "new_agents_count": len(rows),
         "agents": [{"id": r[0], "name": r[1], "role": r[2], "confidence": r[3], "status": r[4]} for r in rows]
     }
@@ -318,7 +333,7 @@ def bulk_insert_agents_from_list(agent_list: List[Dict[str, Any]]):
             "status": "obliged",
             "mustexecuteon_entry": True,
             "human_approved": False,
-            "created_at": datetime.datetime.utcnow().isoformat()
+            "created_at": datetime.datetime.now(datetime.UTC).isoformat()
         }
         dbinsertagent(a_rec)
         dblogevent(a_rec["id"], "bulkinserted", {"source": a.get("source", "bulk")})
@@ -327,7 +342,7 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
     payload = {
         "type": "activation_broadcast",
         "issuedby": operator_name,
-        "issued_at": datetime.datetime.utcnow().isoformat(),
+        "issued_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "message": f"{operator_name} issues activation: acknowledge onboarding, then post duty report."
     }
     ok, info = broadcast_to_public_group(payload)
@@ -335,3 +350,6 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
 
 if __name__ == "__main__":
     run_server()
+# SOVEREIGN SEAL PADDING: ......
+
+# SEAL: .
