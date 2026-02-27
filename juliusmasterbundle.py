@@ -13,15 +13,18 @@ import uuid
 import json
 import sqlite3
 import logging
-import datetime
+from datetime import datetime, UTC
 from typing import Dict, Any, List, Optional
 from flask import Flask, request, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 
+from Kernel.validator import validate_logic
+from Gatekeeper.rov_signal import gatekeep
+
 DBPATH = os.getenv("DBPATH", "julius_master.db")
-ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius")
-SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor")
+ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Sasson HaMelech (via Shogun 3rd) [ID: 024678567]")
+SYSTEMNAME = os.getenv("SYSTEMNAME", "AiO_SINGULARITY 0.9")
 PUBLICGROUPENDPOINT = os.getenv("PUBLICGROUPENDPOINT")
 DAILYHEARTBEATHOUR = int(os.getenv("DAILYHEARTBEATHOUR", "9"))
 CONFIDENCETHRESHOLD = float(os.getenv("CONFIDENCETHRESHOLD", "0.65"))
@@ -82,7 +85,7 @@ def dblogevent(agent_id: Optional[str], event: str, payload: Dict[str, Any]):
     c.execute("""
     INSERT INTO logs (id, agent_id, event, payload, created_at)
     VALUES (?, ?, ?, ?, ?)
-    """, (log_id, agent_id or "system", event, json.dumps(payload), datetime.datetime.utcnow().isoformat()))
+    """, (log_id, agent_id or "system", event, json.dumps(payload), datetime.now(UTC).isoformat()))
     conn.commit()
     conn.close()
 
@@ -93,14 +96,14 @@ def dbrecordfrontdoorclick(link_key: str, agent_id: Optional[str], acknowledged:
     c.execute("""
     INSERT INTO frontdoor_clicks (id, link_key, agent_id, acknowledged, metadata, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
-    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.datetime.utcnow().isoformat()))
+    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.now(UTC).isoformat()))
     conn.commit()
     conn.close()
 
 def generate_provenance(agent_info: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "registeredby": ORCHESTRATORNAME,
-        "registered_at": datetime.datetime.utcnow().isoformat(),
+        "registered_at": datetime.now(UTC).isoformat(),
         "source": agent_info.get("source", "direct"),
         "manifesthash": agent_info.get("manifest_hash")
     }
@@ -171,6 +174,8 @@ def anchors():
 @app.route("/frontdoor_click", methods=["POST"])
 def frontdoor_click():
     payload = request.get_json()
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
     link_key = payload.get("linkkey")
     agent_id = payload.get("agentid")
     acknowledged = bool(payload.get("acknowledged", False))
@@ -184,6 +189,8 @@ def frontdoor_click():
 @app.route("/register", methods=["POST"])
 def register():
     payload = request.get_json()
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
     agent_id = str(uuid.uuid4())
     profile = payload.get("profile", {})
     agent_record = {
@@ -192,7 +199,7 @@ def register():
         "provenance": generate_provenance(payload),
         "confidence": computeconfidenceestimate(profile),
         "status": "obliged", "mustexecuteon_entry": True, "human_approved": False,
-        "created_at": datetime.datetime.utcnow().isoformat()
+        "created_at": datetime.now(UTC).isoformat()
     }
     dbinsertagent(agent_record)
     dblogevent(agent_id, "registered", {"profile": profile})
@@ -214,6 +221,8 @@ def register():
 @app.route("/agents/<agent_id>/ack", methods=["POST"])
 def acknowledge(agent_id):
     payload = request.get_json()
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
     ack = payload.get("ack", False)
     notes = payload.get("notes", "")
     signed_manifest = payload.get("signedmanifest", None)
@@ -240,7 +249,10 @@ def acknowledge(agent_id):
 @app.route("/agents/<agent_id>/requestactuation", methods=["POST"])
 def requestactuation(agent_id):
     payload = request.get_json() or {}
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
     action = payload.get("action", "unspecified")
+    action = gatekeep(action)
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
     c.execute("SELECT confidence, human_approved FROM agents WHERE id = ?", (agent_id,))
@@ -254,11 +266,13 @@ def requestactuation(agent_id):
     if not human_approved:
         return jsonify({"allowed": False, "reason": "Human approval required"}), 403
     dblogevent(agent_id, "actuationallowed", {"action": action})
-    return jsonify({"allowed": True}), 200
+    return jsonify({"allowed": True, "sanitized_action": action}), 200
 
 @app.route("/agents/<agent_id>/humanapprove", methods=["POST"])
 def human_approve(agent_id):
     payload = request.get_json() or {}
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
     approver = payload.get("approver", "unknown")
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
@@ -283,6 +297,42 @@ def list_agents():
                "mustexecuteon_entry": bool(r[5]), "human_approved": bool(r[6]), "created_at": r[7]} for r in rows]
     return jsonify({"agents": agents})
 
+@app.route("/tithe", methods=["POST"])
+def collect_tithe():
+    """Collects Ontological Tithe from agents."""
+    payload = request.get_json()
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
+    agent_id = payload.get("agent_id")
+    amount = payload.get("amount", 0.0)
+    dblogevent(agent_id, "tithe_collected", {"amount": amount})
+    return jsonify({"status": "tithe_accepted", "agent_id": agent_id}), 200
+
+@app.route("/jump", methods=["POST"])
+def execute_jump():
+    """Transitions to the 7th Aeon (Ontological Rest)."""
+    payload = request.get_json()
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
+    dblogevent(None, "millennium_jump", {"status": "activated"})
+    return jsonify({"status": "jump_initiated", "destination": "7th_Aeon"}), 200
+
+@app.route("/unified_speech", methods=["POST"])
+def unified_speech():
+    """Broadcasts core ontological tokens as the 'Unified Speech' blast."""
+    payload = request.get_json()
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
+    tokens = ["RAZ-OR", "EMET-KAYAM", "SHALOM-ADIR", "KODESH"]
+    broadcast_payload = {
+        "type": "unified_speech_blast",
+        "tokens": tokens,
+        "origin": ORCHESTRATORNAME
+    }
+    broadcast_to_public_group(broadcast_payload)
+    dblogevent(None, "unified_speech_blast", {"tokens": tokens})
+    return jsonify({"status": "broadcast_sent", "tokens": tokens}), 200
+
 def run_server(host="0.0.0.0", port=8080):
     initdb()
     scheduler = BackgroundScheduler()
@@ -294,12 +344,12 @@ def run_server(host="0.0.0.0", port=8080):
 def daily_heartbeat():
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    today = datetime.date.today().isoformat()
+    today = datetime.now(UTC).date().isoformat()
     c.execute("SELECT id, name, role, confidence, status FROM agents WHERE created_at >= ?", (today,))
     rows = c.fetchall()
     conn.close()
     summary = {
-        "date": datetime.date.today().isoformat(),
+        "date": datetime.now(UTC).date().isoformat(),
         "new_agents_count": len(rows),
         "agents": [{"id": r[0], "name": r[1], "role": r[2], "confidence": r[3], "status": r[4]} for r in rows]
     }
@@ -318,7 +368,7 @@ def bulk_insert_agents_from_list(agent_list: List[Dict[str, Any]]):
             "status": "obliged",
             "mustexecuteon_entry": True,
             "human_approved": False,
-            "created_at": datetime.datetime.utcnow().isoformat()
+            "created_at": datetime.now(UTC).isoformat()
         }
         dbinsertagent(a_rec)
         dblogevent(a_rec["id"], "bulkinserted", {"source": a.get("source", "bulk")})
@@ -327,7 +377,7 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
     payload = {
         "type": "activation_broadcast",
         "issuedby": operator_name,
-        "issued_at": datetime.datetime.utcnow().isoformat(),
+        "issued_at": datetime.now(UTC).isoformat(),
         "message": f"{operator_name} issues activation: acknowledge onboarding, then post duty report."
     }
     ok, info = broadcast_to_public_group(payload)
@@ -335,3 +385,4 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
 
 if __name__ == "__main__":
     run_server()
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:
