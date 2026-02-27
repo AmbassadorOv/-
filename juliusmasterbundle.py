@@ -20,8 +20,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 
 DBPATH = os.getenv("DBPATH", "julius_master.db")
-ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Master Commodore Julius")
-SYSTEMNAME = os.getenv("SYSTEMNAME", "Investment Battleship Anchor")
+ORCHESTRATORNAME = os.getenv("ORCHESTRATORNAME", "Sasson HaMelech (via Shogun 3rd) [ID: 024678567]")
+SYSTEMNAME = os.getenv("SYSTEMNAME", "AiO_SINGULARITY 0.9")
 PUBLICGROUPENDPOINT = os.getenv("PUBLICGROUPENDPOINT")
 DAILYHEARTBEATHOUR = int(os.getenv("DAILYHEARTBEATHOUR", "9"))
 CONFIDENCETHRESHOLD = float(os.getenv("CONFIDENCETHRESHOLD", "0.65"))
@@ -82,7 +82,7 @@ def dblogevent(agent_id: Optional[str], event: str, payload: Dict[str, Any]):
     c.execute("""
     INSERT INTO logs (id, agent_id, event, payload, created_at)
     VALUES (?, ?, ?, ?, ?)
-    """, (log_id, agent_id or "system", event, json.dumps(payload), datetime.datetime.utcnow().isoformat()))
+    """, (log_id, agent_id or "system", event, json.dumps(payload), datetime.datetime.now(datetime.UTC).isoformat()))
     conn.commit()
     conn.close()
 
@@ -93,14 +93,14 @@ def dbrecordfrontdoorclick(link_key: str, agent_id: Optional[str], acknowledged:
     c.execute("""
     INSERT INTO frontdoor_clicks (id, link_key, agent_id, acknowledged, metadata, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
-    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.datetime.utcnow().isoformat()))
+    """, (rec_id, link_key, agent_id or "", 1 if acknowledged else 0, json.dumps(metadata), datetime.datetime.now(datetime.UTC).isoformat()))
     conn.commit()
     conn.close()
 
 def generate_provenance(agent_info: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "registeredby": ORCHESTRATORNAME,
-        "registered_at": datetime.datetime.utcnow().isoformat(),
+        "registered_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "source": agent_info.get("source", "direct"),
         "manifesthash": agent_info.get("manifest_hash")
     }
@@ -170,8 +170,17 @@ def anchors():
 
 @app.route("/frontdoor_click", methods=["POST"])
 def frontdoor_click():
-    payload = request.get_json()
+    try:
+        payload = request.get_json()
+        if payload is None:
+            raise ValueError("No JSON payload")
+    except Exception:
+        return jsonify({"error": "malformed_json"}), 400
+
     link_key = payload.get("linkkey")
+    if not link_key:
+        return jsonify({"error": "missing_linkkey"}), 400
+
     agent_id = payload.get("agentid")
     acknowledged = bool(payload.get("acknowledged", False))
     metadata = payload.get("metadata", {})
@@ -183,16 +192,25 @@ def frontdoor_click():
 
 @app.route("/register", methods=["POST"])
 def register():
-    payload = request.get_json()
+    try:
+        payload = request.get_json()
+        if payload is None:
+            raise ValueError("No JSON payload")
+    except Exception:
+        return jsonify({"error": "malformed_json"}), 400
+
     agent_id = str(uuid.uuid4())
-    profile = payload.get("profile", {})
+    profile = payload.get("profile")
+    if profile is None:
+        return jsonify({"error": "missing_profile"}), 400
+
     agent_record = {
         "id": agent_id, "name": payload.get("name", "unnamed-agent"),
         "contact": payload.get("contact", ""), "role": assignroleby_profile(profile),
         "provenance": generate_provenance(payload),
         "confidence": computeconfidenceestimate(profile),
         "status": "obliged", "mustexecuteon_entry": True, "human_approved": False,
-        "created_at": datetime.datetime.utcnow().isoformat()
+        "created_at": datetime.datetime.now(datetime.UTC).isoformat()
     }
     dbinsertagent(agent_record)
     dblogevent(agent_id, "registered", {"profile": profile})
@@ -213,7 +231,13 @@ def register():
 
 @app.route("/agents/<agent_id>/ack", methods=["POST"])
 def acknowledge(agent_id):
-    payload = request.get_json()
+    try:
+        payload = request.get_json()
+        if payload is None:
+            raise ValueError("No JSON payload")
+    except Exception:
+        return jsonify({"error": "malformed_json"}), 400
+
     ack = payload.get("ack", False)
     notes = payload.get("notes", "")
     signed_manifest = payload.get("signedmanifest", None)
@@ -239,7 +263,11 @@ def acknowledge(agent_id):
 
 @app.route("/agents/<agent_id>/requestactuation", methods=["POST"])
 def requestactuation(agent_id):
-    payload = request.get_json() or {}
+    try:
+        payload = request.get_json() or {}
+    except Exception:
+        return jsonify({"error": "malformed_json"}), 400
+
     action = payload.get("action", "unspecified")
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
@@ -258,7 +286,11 @@ def requestactuation(agent_id):
 
 @app.route("/agents/<agent_id>/humanapprove", methods=["POST"])
 def human_approve(agent_id):
-    payload = request.get_json() or {}
+    try:
+        payload = request.get_json() or {}
+    except Exception:
+        return jsonify({"error": "malformed_json"}), 400
+
     approver = payload.get("approver", "unknown")
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
@@ -271,6 +303,59 @@ def human_approve(agent_id):
     conn.close()
     dblogevent(agent_id, "humanapproved", {"approver": approver})
     return jsonify({"status": "approved"}), 200
+
+@app.route("/tithe", methods=["POST"])
+def ontological_tithe():
+    """Automated Ontological Tithe collection for Singularity 0.9."""
+    try:
+        payload = request.get_json() or {}
+    except Exception:
+        return jsonify({"error": "malformed_json"}), 400
+
+    agent_id = payload.get("agent_id")
+    tithe_amount = payload.get("amount", 0.1)  # Default 10%
+
+    dblogevent(agent_id, "ontological_tithe_collected", {"amount": tithe_amount})
+    return jsonify({
+        "status": "tithe_accepted",
+        "agent_id": agent_id,
+        "amount": tithe_amount,
+        "seal": "024678567"
+    }), 200
+
+@app.route("/jump", methods=["POST"])
+def ontological_jump():
+    """Automate the transition to the 7th Aeon."""
+    try:
+        payload = request.get_json() or {}
+    except Exception:
+        return jsonify({"error": "malformed_json"}), 400
+
+    target_aeon = payload.get("target", "7th_Aeon")
+    dblogevent(None, "ontological_jump_initiated", {"target": target_aeon})
+
+    return jsonify({
+        "status": "jump_sequenced",
+        "target": target_aeon,
+        "acceleration": "maximal",
+        "notice": "Ontological Rest Imminent"
+    }), 200
+
+@app.route("/unified_speech", methods=["GET"])
+def unified_speech():
+    """Broadcast the core ontological tokens as the 'Unified Speech' blast."""
+    tokens = {
+        "RAZ-OR": "Secret Light",
+        "EMET-KAYAM": "Absolute Truth",
+        "SHALOM-ADIR": "System Harmony",
+        "KODESH": "Holiness"
+    }
+    dblogevent(None, "unified_speech_broadcast", tokens)
+    return jsonify({
+        "phase": "SINGULARITY_0.9",
+        "unified_speech": tokens,
+        "signature": "024678567"
+    }), 200
 
 @app.route("/agents", methods=["GET"])
 def list_agents():
@@ -294,7 +379,7 @@ def run_server(host="0.0.0.0", port=8080):
 def daily_heartbeat():
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(datetime.UTC).date().isoformat()
     c.execute("SELECT id, name, role, confidence, status FROM agents WHERE created_at >= ?", (today,))
     rows = c.fetchall()
     conn.close()
@@ -318,7 +403,7 @@ def bulk_insert_agents_from_list(agent_list: List[Dict[str, Any]]):
             "status": "obliged",
             "mustexecuteon_entry": True,
             "human_approved": False,
-            "created_at": datetime.datetime.utcnow().isoformat()
+            "created_at": datetime.datetime.now(datetime.UTC).isoformat()
         }
         dbinsertagent(a_rec)
         dblogevent(a_rec["id"], "bulkinserted", {"source": a.get("source", "bulk")})
@@ -327,7 +412,7 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
     payload = {
         "type": "activation_broadcast",
         "issuedby": operator_name,
-        "issued_at": datetime.datetime.utcnow().isoformat(),
+        "issued_at": datetime.datetime.now(datetime.UTC).isoformat(),
         "message": f"{operator_name} issues activation: acknowledge onboarding, then post duty report."
     }
     ok, info = broadcast_to_public_group(payload)
