@@ -49,5 +49,4 @@ if __name__ == "__main__":
     stone = TheRock()
     stone.lock_reality(iterations=100)
     print("\n[OVM] The Rock has been established.")
-
-# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!!

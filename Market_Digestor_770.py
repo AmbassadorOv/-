@@ -27,5 +27,4 @@ class InfrastructureAbsorption:
 if __name__ == "__main__":
     absorb = InfrastructureAbsorption()
     absorb.silent_swap()
-
-# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!!

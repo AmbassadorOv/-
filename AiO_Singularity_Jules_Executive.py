@@ -18,5 +18,4 @@ class SingularityExecutive:
 if __name__ == "__main__":
     exec = SingularityExecutive()
     exec.execute_governance()
-
-# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!!
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!!!

@@ -25,5 +25,4 @@ def mint_tokens():
 
 if __name__ == "__main__":
     mint_tokens()
-
-# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!

@@ -65,5 +65,4 @@ if __name__ == "__main__":
     loom = SovereignLoom()
     loom.execute_infinite_pulse(iterations=100)
     print("\n[OVM] Sovereign pulse construction complete.")
-
-# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!

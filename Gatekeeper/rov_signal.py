@@ -25,5 +25,4 @@ def gatekeep(signal: str) -> str:
         sanitized = pattern.sub("[ONTOLOGICAL_FILTER]", sanitized)
 
     return sanitized
-
-# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!

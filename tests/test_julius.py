@@ -93,3 +93,10 @@ def test_sovereign_network_symbiosis():
     net.auto_execute(iterations=1)
     assert net.architect == "ERAN OVED AOATZ"
     assert net.compute_equity == 0.5
+
+def test_sovereign_trading_protocol():
+    from SOVEREIGN_AGENT_TRADING_PROTOCOL import SovereignAgent
+    agent = SovereignAgent()
+    acq, prof = agent.trade_logic(100)
+    assert acq == 33.0
+    assert prof == 67.0
