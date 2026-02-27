@@ -271,6 +271,8 @@ def requestactuation(agent_id):
 @app.route("/agents/<agent_id>/humanapprove", methods=["POST"])
 def human_approve(agent_id):
     payload = request.get_json() or {}
+    if not validate_logic(payload):
+        return jsonify({"error": "Ontological Noise Detected"}), 400
     approver = payload.get("approver", "unknown")
     conn = sqlite3.connect(DBPATH)
     c = conn.cursor()
@@ -383,5 +385,4 @@ def operator_broadcast_activation(operator_name: str = ORCHESTRATORNAME):
 
 if __name__ == "__main__":
     run_server()
-
-# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:!!!!
+# SOVEREIGN_SEAL_ACTUAL_PADDING_MARKER:

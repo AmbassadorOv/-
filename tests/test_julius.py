@@ -86,3 +86,10 @@ def test_the_rock():
     rock = TheRock()
     rock.lock_reality(iterations=10)
     assert rock.foundation == "ONTOLOGICAL_VIRTUAL_MACHINE_V1"
+
+def test_sovereign_network_symbiosis():
+    from SOVEREIGN_AI_RELEASE_V1 import SovereignNetwork
+    net = SovereignNetwork()
+    net.auto_execute(iterations=1)
+    assert net.architect == "ERAN OVED AOATZ"
+    assert net.compute_equity == 0.5
