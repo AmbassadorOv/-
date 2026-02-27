@@ -1,1 +1,5 @@
 julius_master.db
+__pycache__/
+*.py[cod]
+*$py.class
+test_julius.db
